@@ -1,6 +1,8 @@
 ﻿using LibraryApi.Models.Values;
+using LibraryApi.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -15,38 +17,37 @@ namespace LibraryApi.Controllers
     [Route("api/[controller]")]
     public class ValuesController: ControllerBase
     {
+        IConfiguration _configuration;
+        IMasterService _masterService;
+        public ValuesController(IConfiguration configuration, IMasterService masterService)
+        {
+            _configuration = configuration;
+            _masterService = masterService;
+        }
+
         [HttpGet]
         public string Lista()
         {
             return "Funcionou";
         }
 
-        //[Authorize]
+        [Authorize]
+        [HttpGet]
+        public object TesteAuth()
+        {
+            return HttpContext.Items["UserInfo"];
+        }
+
         [HttpGet("listaProduto")]
         public async Task<ProdutoModel> ListaProduto()
         {
-            //return HttpContext.Items["UserInfo"];
-            return await Get<ProdutoModel>("/api/values/listaProduto");
+            return await _masterService.ListarProduto();
         }
 
-        public async Task<T> Get<T>(string url)
+        [HttpGet("config")]
+        public object ListaConfig()
         {
-            using (var client = new HttpClient { BaseAddress = new Uri("https://localhost:5001") })
-            {
-                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-                var response = await client.GetAsync(url);
-
-                if (response != null && response.IsSuccessStatusCode)
-                {
-                    var jsonString = await response.Content.ReadAsStringAsync();
-                    var resultado = JsonConvert.DeserializeObject<T>(jsonString);
-
-                    return resultado;
-                }
-            }
-
-            return default(T);
-        }
+            return _configuration["Teste"];
+        }        
     }
 }
